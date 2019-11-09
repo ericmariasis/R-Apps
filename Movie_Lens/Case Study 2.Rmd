@@ -1,0 +1,491 @@
+---
+title: "Case Study 2 - Analyzing data from MovieLens"
+author: "Worcester Polytechnic Institute"
+subtitle: DS501 - Introduction to Data Science
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+1. Report: please prepare a report based on what you found in the data.
+
+- What data you collected?
+  + This report collects a variety of data about movie-goers over a period of many years, such as what gender they are, what movies they see, and how they rate those movies. A variety of insightful trends using this data was gleaned in the charts below.
+- Why this topic is interesting or important to you? (Motivations)
+  + Almost everybody enjoys movies as a form of entertainment in some form or another, and I enjoy learning about how people perceive different movies. The charts I produced from the data below gave me valuable insights into how people think so that when I meet new people I can be more informed about their preferences.
+- How did you analyze the data?
+  + The original data was read into a CSV document, and then the R ggplot 2 framework was used to analyze various segments of the data and display the resulting information in various charts and graphs to summarize the conclusions made.
+- What did you find in the data? (please include figures or tables in the report)
+  + The charts and insights described in this report show important trends in how individuals who watch movies tend to perceive those movies, and what types of movies they prefer. Some of the insights were more counterintuitive than others, but all of the insights are supported by the data.
+
+2. R Code with RMarkdown
+
+How to submit:
+Upload on Course Webpage and Send an email to ndingari@wpi.edu with the subject: "DS501 Case study 2".
+
+## Introduction
+**Desired outcome of the case study.**
+In this case study we will look at the movies data set from MovieLens.
+It contains data about users and how they rate movies.
+The idea is to analyze the data set, make conjectures, support or refute those conjectures with data, and tell a story about the data!
+
+## Problem 1: Importing the MovieLens data set and merging it into a single data frame
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(RCurl)
+d1 = getURL("https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv")
+mlMultiData = read.csv(text=d1)
+write.csv(mlMultiData, "multidata.csv")
+```
+
+**Report some basic details of the data you collected. For example:**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(printr)
+```
+
+
+- How many movies have an average rating over 4.5 overall?
+```{r echo=FALSE}
+# Get the mean movie ratings grouped by title
+rating_by_movie = mlMultiData %>%
+    group_by(movie_title) %>%
+    summarise(meanRating = mean(rating))
+
+good_movies = filter(rating_by_movie, meanRating > 4.5)
+count_good_movies = count(good_movies)
+
+good_movies  = good_movies %>%
+    arrange(desc(meanRating))
+
+good_movies = as.data.frame(good_movies)
+colnames(good_movies) = c("Title", "Mean Rating")
+caption = paste0("Movies over 4.5 stars on average (", count_good_movies, " total)")
+
+kable(good_movies, caption = caption, col.names = colnames(good_movies))
+```
+
+- How many movies have an average rating over 4.5 among men? How about women?
+
+```{r echo=FALSE}
+male_data = mlMultiData %>%
+    filter(gender == "M")
+
+male_ratings_by_movie = male_data %>%
+    group_by(movie_title) %>%
+    summarise(meanRating = mean(rating))
+
+good_movies = filter(male_ratings_by_movie, meanRating > 4.5)
+count_good_movies = count(good_movies)
+
+good_movies  = good_movies %>%
+    arrange(desc(meanRating))
+
+good_movies = as.data.frame(good_movies)
+colnames(good_movies) = c("Title", "Mean Rating")
+caption = paste0("Movies over 4.5 stars on average for males (", count_good_movies, " total)")
+
+kable(good_movies, caption = caption, col.names = colnames(good_movies))
+
+# Females
+female_data = mlMultiData %>%
+    filter(gender == "F")
+
+female_ratings_by_movie = female_data %>%
+    group_by(movie_title) %>%
+    summarise(meanRating = mean(rating))
+
+good_movies = filter(female_ratings_by_movie, meanRating > 4.5)
+count_good_movies = count(good_movies)
+
+good_movies  = good_movies %>%
+    arrange(desc(meanRating))
+
+good_movies = as.data.frame(good_movies)
+colnames(good_movies) = c("Title", "Mean Rating")
+caption = paste0("Movies over 4.5 stars on average for females (", count_good_movies, " total)")
+
+kable(good_movies, caption = caption, col.names = colnames(good_movies))
+```
+
+- How many movies have an median rating over 4.5 among men over age 30? How about women over age 30?
+
+```{r, echo = FALSE}
+mlData_over30 = mlMultiData %>%
+    filter(age > 30)
+male_data = mlData_over30 %>%
+    filter(gender == "M")
+
+male_ratings_by_movie = male_data %>%
+    group_by(movie_title) %>%
+    summarise(meanRating = mean(rating))
+
+good_movies = filter(male_ratings_by_movie, meanRating > 4.5)
+count_good_movies = count(good_movies)
+
+good_movies  = good_movies %>%
+    arrange(desc(meanRating))
+
+good_movies = as.data.frame(good_movies)
+colnames(good_movies) = c("Title", "Mean Rating")
+caption = paste0("Movies over 4.5 stars on average for males over 30 (", count_good_movies, " total)")
+
+kable(good_movies, caption = caption, col.names = colnames(good_movies))
+
+# Females
+female_data = mlData_over30 %>%
+    filter(gender == "F")
+
+female_ratings_by_movie = female_data %>%
+    group_by(movie_title) %>%
+    summarise(meanRating = mean(rating))
+
+good_movies = filter(female_ratings_by_movie, meanRating > 4.5)
+count_good_movies = count(good_movies)
+
+good_movies  = good_movies %>%
+    arrange(desc(meanRating))
+
+good_movies = as.data.frame(good_movies)
+colnames(good_movies) = c("Title", "Mean Rating")
+caption = paste0("Movies over 4.5 stars on average for females over 30 (", count_good_movies, " total)")
+
+kable(good_movies, caption = caption, col.names = colnames(good_movies))
+```
+
+- What are the ten most popular movies?
+    + In this report, the most popular movies are defined as the ones that have been seen/rated the greatest number of times
+
+```{r, echo = FALSE}
+movie_entries = mlMultiData$movie_title
+movie_entries = unlist(movie_entries)
+movie_entries_tbl = table(movie_entries)
+movie_entries_tbl = sort(movie_entries_tbl, decreasing = TRUE)
+movie_entries_tbl = head(movie_entries_tbl, 10)
+movie_entries_tbl = as.data.frame(movie_entries_tbl)
+caption = "Top 10 Popular Movies"
+colnames(movie_entries_tbl) = c("Movie", "View/Rating Count")
+kable(movie_entries_tbl, caption = caption, col.names = colnames(movie_entries_tbl))
+```
+
+- Make some conjectures about how easy various groups are to please? Support your answers with data!
+    + For example, one might conjecture that people between the ages of 1 and 10 are the easiest to please since they are all young children.    This conjecture may or may not be true, but how would you support or disprove either conclusion with with data?
+      - If people between the ages of 1-10 were easiest to please, then a significantly higher percentage of them should be giving high ratings to movies than people of other ages do.
+      - Looking at the "Count of people 10 and under by Rating" chart and the "Count of people 11 and over by Rating" charts below, both charts seem to have a similar distribution of most people giving a lot of 4 star ratings followed by slightly fewer giving 3 and 5 star ratings. This trend is not significantly different with the 10 and under group than in the 11 and over group, therefore 1-10 year olds do not appear to be significantly easier to please.
+    + Be sure to come up with your own conjectures and support them with data!
+      - Another conjecture the data supports is that males and females have roughly similar patterns in how they distribute their movie ratings. For both males and females, based on the "Rating Breakdown Count for Males" and "Rating Breakdown Count for Females" charts below, both charts show that people of each gender tend to give more 4 star ratings than any other ratings. Also both genders tend to give slightly fewer 3 and 5 ratings, and even fewer 1 and 2 star ratings. This trend is the same with both genders.
+      - A fascinating trend the data shows is that a large percentage of females who rate movies 1 star are 20 years of age or younger. For males who rate movies 1 star, the age distribution is much more even, although slightly more are also younger. The phenomenon of younger people rating movies 1 star is far more prevalent among females than males. See the charts below with "Age Count Grouped by Rating" in the title.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+young_people = mlMultiData %>%
+    filter(age <= 10)
+
+not_young_people = mlMultiData %>%
+    filter(age >= 11)
+
+ggplot(young_people, aes(x = age, fill = rating)) +
+    geom_histogram() +
+    facet_grid(. ~ rating) +
+    ggtitle("Count of people 10 and under by Rating")
+
+ggplot(not_young_people, aes(x = age, fill = rating)) +
+    geom_histogram() +
+    facet_grid(. ~ rating) +
+    ggtitle("Count of people 11 and over by Rating")
+
+high_rated_movies = mlMultiData %>%
+    filter(rating >= 4)
+low_rated_movies = mlMultiData %>%
+    filter(rating <= 3)
+male_rated_movies = mlMultiData %>%
+    filter(gender == "M")
+female_rated_movies = mlMultiData %>%
+    filter(gender == "F")
+
+ggplot(male_rated_movies, aes(x = rating)) +
+    geom_bar(colour = "Orange", fill = "Orange") +
+    ggtitle("Rating Breakdown Count for Males")
+
+ggplot(female_rated_movies, aes(x = rating)) +
+    geom_bar(colour = "Purple", fill = "Purple") +
+    ggtitle("Rating Breakdown Count for Females")
+
+ggplot(male_rated_movies, aes(x = age, fill = rating)) +
+    geom_histogram() +
+    facet_grid(. ~ rating) +
+    ggtitle("Male Age Count Grouped by Rating")
+
+ggplot(female_rated_movies, aes(x = age, fill = rating)) +
+    geom_histogram() +
+    facet_grid(. ~ rating) +
+    ggtitle("Female Age Count Grouped by Rating")
+```
+
+
+## Problem 2: Expand our investigation to histograms
+**An obvious issue with any inferences drawn from Problem 1 is that we did not consider how many times a movie was rated.**
+
+- Plot a histogram of the ratings of all movies.
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
+ggplot(mlMultiData, aes(x = rating)) +
+    geom_histogram(fill = "orange", color = "orange") +
+    ggtitle("Counts by rating for all movies")
+```
+
+- Plot a histogram of the number of ratings each movie received.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+movie_entries_tbl = table(unlist(mlMultiData$movie_title))
+movie_entries_tbl = as.data.frame(movie_entries_tbl)
+# histogram with x-axis as number of ratings for a movie,
+# and y-axis being amount of movies with that number of ratings
+ggplot(movie_entries_tbl, aes(x = Freq)) +
+    geom_histogram(colour = "red", fill = "red") +
+    ggtitle("Number of movies vs. number of ratings") +
+    labs(x = "Number of Ratings for Movie") +
+    labs(y = "Amount of Movies Receiving Given Rating Amount")
+
+```
+
+- Plot a histogram of the average rating for each movie.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+# mean rating per movie
+mean_per_movie = mlMultiData %>%
+    group_by(movie_title) %>%
+    summarise(meanRating = mean(rating))
+# add how many times movies were rated to table
+mean_per_movie = cbind(mean_per_movie, movie_entries_tbl$Freq)
+colnames(mean_per_movie) = c("movie_title", "meanRating","Freq")
+
+ggplot(mean_per_movie, aes(x = meanRating)) +
+    geom_histogram(fill = "green", color = "green") +
+    ggtitle("Number of Movies Receiving Given Average Ratings")
+```
+
+- Plot a histogram of the average rating for movies which are rated more than 100 times.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+# get data frame of movies rated over one hundred times
+mean_per_movie_overHundred = mean_per_movie %>%
+    filter(Freq > 100)
+
+ggplot(mean_per_movie_overHundred, aes(x = meanRating)) +
+    geom_histogram(fill = "blue", color = "blue") +
+    ggtitle("Average Rating Distribution for Movies Rated > 100 times")
+
+```
+- Results
+    + What do you observe about the tails of the histogram where you use all the movies versus the one where you only use movies rated more than 100 times?
+      - For the histogram using all the movies, there are a significantly higher percentage of movies where the mean rating is low than for just the movies with over 100 ratings. For the histogram with just the movies over 100 ratings, the outliers are less pronounced and the distribution is smoother.
+    + Which highly rated movies would you trust are actually good? Those rated more than 100 times or those rated less than 100 times?
+      - The highly rated movies that are actually good are more likely the ones with over 100 ratings because more people have had the opportunity to rate the movies, and the outliers of fewer data points skew the data less.
+- Make some conjectures about the distribution of ratings? Support your answers with data!
+    + For example, what age range do you think has more extreme ratings? Do you think children are more or less likely to rate a movie 1 or 5?
+    + Be sure to come up with your own conjectures and support them with data!
+      - The "Rating Counts by Age" chart below groups rating counts into 5 equal age ranges. For example it has data about the rating count of movie goers between 7 and 20 years old, then it has more information about moviegoers between the ages of 20 and 33 etc. Based on this chart, every age range seems to have roughly the same distribution of ratings - with most individuals giving 4 stars and slightly fewer giving 3 or 5 stars. There appears to be no particular age range that is significantly more likely to give movies extreme ratings.
+      - The "Age Distribution Grouped by Rating" chart shows within each rating class, how many people of each age group gave movies that rating. Like the chart mentioned above, each rating grouping here has roughly the same distribution of the number people of each age giving the movies that rating. Each group has a high number of 20-40 year olds followed by lower numbers of people of younger and older ages. In general, the data indicates that a high number of 20-40 year olds rated movies and a lower number of people of different ages rated movies. No particular rating class appears to have a significant difference in which age group gives that rating more often.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+ggplot(mlMultiData, aes(x = age, fill = rating)) +
+  geom_histogram() +
+  ggtitle("Age Distribution Grouped by Rating") +
+  facet_grid(. ~ rating)
+# get column of data frame where there are discrete groupings for age
+with_factor = mlMultiData %>%
+  mutate(factorAge = cut(age, 5))
+ggplot(with_factor, aes(x = rating, fill = factorAge)) +
+  geom_histogram() +
+  facet_grid(. ~ factorAge) +
+  ggtitle("Rating counts broken down by age")
+
+```
+
+
+## Problem 3: Correlation: Men versus women
+**Let us look more closely at the relationship between the pieces of data we have.**
+
+
+- Make a scatter plot of men versus women and their mean rating for every movie.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+mean_all = mlMultiData %>%
+  group_by(movie_title, gender) %>%
+  summarise(meanRating = mean(rating))
+mean_females = filter(mean_all, gender == "F")
+mean_males = filter(mean_all, gender == "M")
+# need to filter male and female lists to have only the movies
+# common between them so they have the same dimensions and can be
+# plotted
+mean_males = mean_males[mean_males$movie_title %in% mean_females$movie_title,]
+
+mean_females = mean_females[mean_females$movie_title %in% mean_males$movie_title,]
+
+mean_both = subset(mean_females, select = -c(gender))
+maleRatingSubset = subset(mean_males, select = -c(gender, movie_title))
+# put male mean ratings and female mean ratings in one chart
+mean_both = cbind(mean_both, maleRating = maleRatingSubset$meanRating)
+colnames(mean_both) = c("Movie_Title","Female_Rating","Male_Rating")
+
+ggplot(mean_both, aes(x = Female_Rating, y = Male_Rating)) +
+  geom_point() +
+  ggtitle("Male Mean Rating vs. Female Mean Rating per Movie")
+```
+
+- Make a scatter plot of men versus women and their mean rating for movies rated more than 200 times.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+# use info earlier in the code to filter to only the movies with over two hundred ratings
+mean_per_movie_overTwoHundred = mean_per_movie_overHundred %>%
+  filter(Freq > 200)
+# filter mean ratings for both genders to only include movies with over 200 ratings
+mean_both_over_two_hundred = mean_both[mean_both$Movie_Title %in% mean_per_movie_overTwoHundred$movie_title,]
+
+ggplot(mean_both_over_two_hundred, aes(x = Female_Rating, y = Male_Rating)) +
+  geom_point() +
+  ggtitle("Mean Male Rating vs. Female Rating per Movie >200 Ratings")
+```
+
+- Compute the correlation coefficent between the ratings of men and women.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+library(ggpubr)
+
+# correlation coefficient for mean male/female ratings for all movies
+sp = ggscatter(mean_both, x = "Female_Rating", y = "Male_Rating",
+   add = "reg.line",  
+   add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+   title = "Mean Male/Female Ratings - All Movies",
+   conf.int = TRUE # Add confidence interval
+   )
+# Add correlation coefficient
+sp + stat_cor(method = "pearson")
+
+# mean male/female ratings just for movies over 200 ratings
+sp = ggscatter(mean_both_over_two_hundred, x = "Female_Rating", y = "Male_Rating",
+   add = "reg.line",  
+   add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+   title = "Mean Male/Female Ratings - Movies With Over 200 Ratings",
+   conf.int = TRUE # Add confidence interval
+   )
+# Add correlation coefficient
+sp + stat_cor(method = "pearson")
+```
+- Results
+    + What do you observe?
+      - Based on the above plots, the correlation coefficient for the mean female/male ratings for all the movies was about 0.52.
+      - The correlation coefficient for the female/male ratings of the movies receiving over 200 ratings is around 0.8.
+    + Are the ratings similiar or not? Support your answer with data!
+      - As described above, the ratings for the movies that received over 200 ratings were significantly more positively correlated than the plot for all the movies.
+- Conjecture under what circumstances the rating given by one gender can be used to predict the rating given by the other gender.
+    + For example, are men and women more similar when they are younger or older?
+    + Be sure to come up with your own conjectures and support them with data!
+      -Based on the below plots, the correlation between males and females when they are younger than 20 years old is very low - approximately 0.25.
+      - Between the ages of 30 and 40, the genders have a much higher correlation of around 0.56, and then between the ages of 41 and 60 years old the correlation drops again slightly to 0.38.
+      - This data supports the earlier conjecture that more females younger than 20 years of age tend to give movies extremely low ratings than males younger than 20 years of age.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+# data for movie-goers under 20 years old
+ratings_under_20 = mlMultiData %>%
+  filter(age < 20)
+mean_all = ratings_under_20 %>%
+  group_by(movie_title, gender) %>%
+  summarise(meanRating = mean(rating))
+mean_females = filter(mean_all, gender == "F")
+mean_males = filter(mean_all, gender == "M")
+# need to filter male and female lists to have only the movies
+# common between them so they have the same dimensions and can be
+# plotted
+mean_males = mean_males[mean_males$movie_title %in% mean_females$movie_title,]
+
+mean_females = mean_females[mean_females$movie_title %in% mean_males$movie_title,]
+
+mean_both = subset(mean_females, select = -c(gender))
+maleRatingSubset = subset(mean_males, select = -c(gender, movie_title))
+# put male mean ratings and female mean ratings in one chart
+mean_both = cbind(mean_both, maleRating = maleRatingSubset$meanRating)
+colnames(mean_both) = c("Movie_Title","Female_Rating","Male_Rating")
+
+# correlation coefficient for mean male/female ratings for all movies for goers under 20 years old
+sp = ggscatter(mean_both, x = "Female_Rating", y = "Male_Rating",
+   add = "reg.line",  
+   add.params = list(color = "yellow", fill = "lightblue"), # Customize reg. line
+   title = "Males vs. Females Under 20 Years Old",
+   conf.int = TRUE # Add confidence interval
+   )
+# Add correlation coefficient
+sp + stat_cor(method = "pearson")
+
+# data for movie-goers between 30 and 40 years old
+ratings_30_to_40 = mlMultiData %>%
+  filter(age <= 40 & age >= 30)
+mean_all = ratings_30_to_40 %>%
+  group_by(movie_title, gender) %>%
+  summarise(meanRating = mean(rating))
+mean_females = filter(mean_all, gender == "F")
+mean_males = filter(mean_all, gender == "M")
+# need to filter male and female lists to have only the movies
+# common between them so they have the same dimensions and can be
+# plotted
+mean_males = mean_males[mean_males$movie_title %in% mean_females$movie_title,]
+
+mean_females = mean_females[mean_females$movie_title %in% mean_males$movie_title,]
+
+mean_both = subset(mean_females, select = -c(gender))
+maleRatingSubset = subset(mean_males, select = -c(gender, movie_title))
+# put male mean ratings and female mean ratings in one chart
+mean_both = cbind(mean_both, maleRating = maleRatingSubset$meanRating)
+colnames(mean_both) = c("Movie_Title","Female_Rating","Male_Rating")
+
+# correlation coefficient for mean male/female ratings for all movies for goers 30 to 40 years old
+sp = ggscatter(mean_both, x = "Female_Rating", y = "Male_Rating",
+   add = "reg.line",  
+   add.params = list(color = "purple", fill = "lightblue"), # Customize reg. line
+   title = "Males vs. Females 30-40 Years Old",
+   conf.int = TRUE # Add confidence interval
+   )
+# Add correlation coefficient
+sp + stat_cor(method = "pearson")
+
+# data for movie-goers between 41 and 60 years old
+ratings_41_to_60 = mlMultiData %>%
+  filter(age <= 60 & age >= 41)
+mean_all = ratings_41_to_60 %>%
+  group_by(movie_title, gender) %>%
+  summarise(meanRating = mean(rating))
+mean_females = filter(mean_all, gender == "F")
+mean_males = filter(mean_all, gender == "M")
+# need to filter male and female lists to have only the movies
+# common between them so they have the same dimensions and can be
+# plotted
+mean_males = mean_males[mean_males$movie_title %in% mean_females$movie_title,]
+
+mean_females = mean_females[mean_females$movie_title %in% mean_males$movie_title,]
+
+mean_both = subset(mean_females, select = -c(gender))
+maleRatingSubset = subset(mean_males, select = -c(gender, movie_title))
+# put male mean ratings and female mean ratings in one chart
+mean_both = cbind(mean_both, maleRating = maleRatingSubset$meanRating)
+colnames(mean_both) = c("Movie_Title","Female_Rating","Male_Rating")
+
+# correlation coefficient for mean male/female ratings for all movies for goers 41 to 60 years old
+sp = ggscatter(mean_both, x = "Female_Rating", y = "Male_Rating",
+   add = "reg.line",  
+   add.params = list(color = "orange", fill = "lightblue"), # Customize reg. line
+   title = "Males vs. Females 41-60 Years Old",
+   conf.int = TRUE # Add confidence interval
+   )
+# Add correlation coefficient
+sp + stat_cor(method = "pearson")
+```
+
+
+## Problem 4: Open Ended Question: Business Intelligence
+- Do any of your conjectures in Problems 1, 2, and 3 provide insights that a movie company might be interested in?
+  + For problem 1, a fascinating insight is that generally speaking, people of different age groups and genders have similar patterns in how they rate movies. Both genders individually as well many of the distinct age groups all tended to most commonly give 4 star ratings followed by 3 and 5 star ratings. Then the remaining ratings were least common.
+  + Also found in problem 1, younger females disproportionately tend to give low ratings compared to other demographics. This suggests that movie companies might want to put slightly more effort in catering toward younger females.
+  + There are a significantly greater number of movies that received ratings from fewer than 500 individuals than movies that were rated by more people, which indicates that most movies are not overwhelmingly popular. However, there are stronger correlations between genders once the number of ratings for a movie is higher. This indicates that when more people rate a movie, the data tends to converge between different groups.
+  + Movie viewers of more extreme ages (very young or very old) tend to vary more in how they view movies then middle aged people (e.g age 30-40). This indicates that the movie industry might need to put slightly more effort into appealing to certain younger or older individuals.
+- Propose a business question that you think this data can answer.
+  + Does the movie industry need to expend a lot of money and energy creating that have a distinct appeal to different genders?
+  + Answer: For most movies that are rated by a large number of individuals, based on the data they tend to appeal roughly equally to males and females based on the positive correlation charts between the genders. For certain niche movies rated by fewer individuals, there do tend to be movies that one gender prefers strongly over the other. However, since the movies rated by more people are the money-makers, in general the movie industry does not have to strongly consider the difference between genders. They should just make a small percentage of movies that cater to each gender then spend most of their energy on creating movies with universal appeal. 
+
+## Done
+All set!
